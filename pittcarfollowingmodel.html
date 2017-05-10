@@ -1,0 +1,102 @@
+<html>
+    <head></head>
+    <body>
+        <h1>PITT car-following model</h1>
+        <canvas id="traffic"></canvas>
+        <script>
+            var canvas = document.getElementById("traffic");
+            var ctx = canvas.getContext("2d");
+
+            var colours = [
+                "red",
+                "green",
+                "blue",
+                "purple",
+                "black",
+                "pink",
+                "orange",
+                "cyan",
+                "brown",
+                "magenta"
+            ]
+
+            class Car{
+
+                constructor(position, velocity){
+                    this.position = position;
+                    this.velocity = velocity;
+                    this.acceleration = 0;
+                    this.colour = colours[Math.floor(Math.random() * colours.length )]
+                }
+
+                accelerate(accelerationDelta){
+                    this.position = this.position + this.velocity;
+                    this.velocity = this.velocity + this.acceleration;
+                    this.acceleration = this.acceleration + accelerationDelta;
+                }
+
+                follow(car){
+                    var L = 7;
+                    var B = 10;
+                    var b = 0.0001;
+                    var k = 10;
+                    var seperation = car.position - this.position
+                    this.acceleration = 2 * (seperation - L + B - this.velocity * (k + 1) - b * k * Math.pow(car.velocity - this.velocity, 2)) / ( 1 + 2 * k);
+                }
+            }
+
+            var cars = [];            
+
+            var carCount = 6;
+            var startSpeed = 10;
+
+            for(var i = carCount; i > 0; i--){
+                cars.push(new Car(i * 100, startSpeed));
+            }
+
+            var speedCoefficient = 0.001;
+
+            var drawCar = (car, middlePoint, radius) => {
+                ctx.beginPath();
+                ctx.strokeStyle= car.colour;
+                ctx.fillStyle= car.colour;
+
+                ctx.arc(middlePoint.x + radius * Math.cos(car.position * speedCoefficient), middlePoint.y + radius * Math.sin(car.position * speedCoefficient), 8, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fill();
+            }
+
+            var t = 0;
+
+            var draw = () => {
+                canvas.height = Math.min(400, canvas.parentElement.offsetHeight);
+                canvas.width = Math.min(400, canvas.parentElement.offsetWidth);
+
+                ctx.beginPath();
+                ctx.strokeStyle="black";
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                var middlePoint = {x: canvas.width / 2, y: canvas.height / 2};
+                var radius = 0.5 * 0.9 * Math.min(canvas.width, canvas.height);
+                ctx.arc(middlePoint.x, middlePoint.y, radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                for(var i = 0; i < cars.length; i++){
+                    drawCar(cars[i], middlePoint, radius);
+                }
+
+                cars[0].accelerate(0.01 * Math.cos(t/50));
+
+                for(var i = 1; i < cars.length; i++){
+                    cars[i].follow(cars[i-1]);
+                    cars[i].accelerate(0);
+                }
+
+                t++;  
+
+                window.requestAnimationFrame(draw)
+            }
+
+            draw();
+        </script>
+    </body>
+</html>
